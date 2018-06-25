@@ -69,7 +69,7 @@ func makeRequestAgent(id int, attempts chan attempt, wg *sync.WaitGroup) {
 	e := 0
 	for i := 0; ; i++ {
 		now := time.Now()
-		res, err := http.Get("http://martialarchery.com/")
+		res, err := http.Get(os.Getenv("TARGET"))
 		if err != nil {
 			e++
 		} else {

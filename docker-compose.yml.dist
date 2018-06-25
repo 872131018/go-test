@@ -8,3 +8,4 @@ services:
             context: ./go
         environment:
             - AGENTS=1
+            - TARGET=
