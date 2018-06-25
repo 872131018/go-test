@@ -3,33 +3,27 @@ package main
 import (
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
+	"os/exec"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
 )
 
-type success struct {
-	id    int
-	s     int
-	e     int
-	start time.Time
-	code  int
-}
-
-type failure struct {
-	err   error
-	id    int
-	e     int
-	start time.Time
+type attempt struct {
+	agent  int
+	s      int
+	e      int
+	length time.Duration
+	code   int
+	err    error
 }
 
 func main() {
 	var wg sync.WaitGroup
-	successes := make(chan success)
-	failures := make(chan failure)
+	attempts := make(chan attempt)
 
 	agents, err := strconv.Atoi(os.Getenv("AGENTS"))
 	if err != nil {
@@ -37,29 +31,40 @@ func main() {
 	}
 	for i := 0; i < agents; i++ {
 		wg.Add(1)
-		go makeRequestAgent(successes, failures, &wg)
+		go makeRequestAgent(i, attempts, &wg)
 	}
-	go printResponses(successes)
-	go printErrors(failures)
+	go handleResponses(attempts, &wg)
 	wg.Wait()
 }
 
-func printResponses(successes chan success) {
-	for res := range successes {
-		fmt.Printf("Agent %d successes: %d\n", res.id, res.s)
-		fmt.Printf("Last request duration: %v\n", time.Since(res.start))
-	}
-}
-func printErrors(failures chan failure) {
-	for err := range failures {
-		fmt.Printf("Agent %d errors: %d\n", err.id, err.e)
-		fmt.Printf("Last request duration: %v\n", time.Since(err.start))
+func handleResponses(attempts chan attempt, wg *sync.WaitGroup) {
+	defer wg.Done()
+	output := make(map[int]string)
+	for a := range attempts {
+		output[a.agent] = fmt.Sprintf("Agent %d - successes: %d - failures: %d - duration: %v", a.agent, a.s, a.e, a.length)
+		writeOutput(output)
 	}
 }
 
-func makeRequestAgent(successes chan success, errors chan failure, wg *sync.WaitGroup) {
+func writeOutput(output map[int]string) {
+	cmd := exec.Command("clear")
+	cmd.Stdout = os.Stdout
+	cmd.Run()
+	fmt.Println("") //hack to fix output
+
+	var keys []int
+	for k := range output {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+
+	for key := range keys {
+		fmt.Println(output[key])
+	}
+}
+
+func makeRequestAgent(id int, attempts chan attempt, wg *sync.WaitGroup) {
 	defer wg.Done()
-	id := rand.Int()
 	s := 0
 	e := 0
 	for i := 0; ; i++ {
@@ -67,26 +72,24 @@ func makeRequestAgent(successes chan success, errors chan failure, wg *sync.Wait
 		res, err := http.Get("http://martialarchery.com/")
 		if err != nil {
 			e++
-			errors <- failure{
-				err:   err,
-				id:    id,
-				e:     e,
-				start: now,
-			}
-			next := time.Duration(rand.Intn(5)) * time.Second
-			time.Sleep(next)
 		} else {
 			s++
-			successes <- success{
-				id:    id,
-				s:     s,
-				e:     e,
-				start: now,
-				code:  res.StatusCode,
-			}
 			res.Body.Close()
-			next := time.Duration(rand.Intn(2)) * time.Second
-			time.Sleep(next)
 		}
+		attempt := attempt{
+			agent:  id,
+			s:      s,
+			e:      e,
+			length: time.Since(now),
+		}
+		if res != nil {
+			attempt.code = res.StatusCode
+			attempt.err = nil
+		}
+		if err != nil {
+			attempt.code = 500
+			attempt.err = err
+		}
+		attempts <- attempt
 	}
 }
