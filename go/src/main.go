@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"sort"
 	"strconv"
-	"sync"
 	"time"
 )
 
@@ -22,27 +21,31 @@ type attempt struct {
 }
 
 func main() {
-	var wg sync.WaitGroup
+	// create a channel to hold agent results
 	attempts := make(chan attempt)
-
+	// determine the number of agents to produce
 	agents, err := strconv.Atoi(os.Getenv("AGENTS"))
 	if err != nil {
 		log.Fatal("Must have a valid number of agents")
 	}
+	// generate agents to make requests
 	for i := 0; i < agents; i++ {
-		wg.Add(1)
-		go makeRequestAgent(i, attempts, &wg)
+		go makeRequestAgent(i, attempts)
 	}
-	go handleResponses(attempts, &wg)
-	wg.Wait()
+	// hash to send to display
+	output := make(map[int]string)
+	// listen to agents and aggregate results
+	go handleResponses(attempts, &output)
+	// refresh display on an interval
+	ticker := time.NewTicker(100 * time.Millisecond)
+	for _ = range ticker.C {
+		writeOutput(output)
+	}
 }
 
-func handleResponses(attempts chan attempt, wg *sync.WaitGroup) {
-	defer wg.Done()
-	output := make(map[int]string)
+func handleResponses(attempts chan attempt, output *map[int]string) {
 	for a := range attempts {
-		output[a.agent] = fmt.Sprintf("Agent %d - successes: %d - failures: %d - duration: %v", a.agent, a.s, a.e, a.length)
-		writeOutput(output)
+		(*output)[a.agent] = fmt.Sprintf("Agent %d - successes: %d - failures: %d - duration: %v", a.agent, a.s, a.e, a.length)
 	}
 }
 
@@ -63,8 +66,7 @@ func writeOutput(output map[int]string) {
 	}
 }
 
-func makeRequestAgent(id int, attempts chan attempt, wg *sync.WaitGroup) {
-	defer wg.Done()
+func makeRequestAgent(id int, attempts chan attempt) {
 	s := 0
 	e := 0
 	for i := 0; ; i++ {
