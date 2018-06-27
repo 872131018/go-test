@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"sort"
-	"strconv"
 	"time"
 )
 
@@ -21,21 +20,47 @@ type attempt struct {
 }
 
 func main() {
+	// define possible targets
+	projects := []string{
+		"martialarchery.com",
+		"romancingthebrush.com",
+	}
+
+	// Output to terminal the options
+	for index, project := range projects {
+		fmt.Printf("%d - %s\n", index, project)
+	}
+
+	// Declare the list of projects that are supported
+	fmt.Printf("Which project would you like to test?: ")
+	var target int
+	_, err := fmt.Scanf("%d", &target)
+	if err != nil {
+		log.Fatal("Must select a valid target to test")
+	}
+
 	// create a channel to hold agent results
 	attempts := make(chan attempt)
+
 	// determine the number of agents to produce
-	agents, err := strconv.Atoi(os.Getenv("AGENTS"))
+	fmt.Printf("How many agents would you like to create? ")
+	var agents int
+	_, err = fmt.Scanf("%d", &agents)
 	if err != nil {
 		log.Fatal("Must have a valid number of agents")
 	}
+
 	// generate agents to make requests
 	for i := 0; i < agents; i++ {
-		go makeRequestAgent(i, attempts)
+		go makeAgent(i, projects[target], attempts)
 	}
+
 	// hash to send to display
 	output := make(map[int]string)
+
 	// listen to agents and aggregate results
 	go handleResponses(attempts, &output)
+
 	// refresh display on an interval
 	ticker := time.NewTicker(100 * time.Millisecond)
 	for _ = range ticker.C {
@@ -66,12 +91,14 @@ func writeOutput(output map[int]string) {
 	}
 }
 
-func makeRequestAgent(id int, attempts chan attempt) {
+func makeAgent(id int, target string, attempts chan attempt) {
+	target = fmt.Sprintf("http://%s/", target)
 	s := 0
 	e := 0
 	for i := 0; ; i++ {
 		now := time.Now()
-		res, err := http.Get(os.Getenv("TARGET"))
+		fmt.Println(target)
+		res, err := http.Get(target)
 		if err != nil {
 			e++
 		} else {
@@ -93,5 +120,6 @@ func makeRequestAgent(id int, attempts chan attempt) {
 			attempt.err = err
 		}
 		attempts <- attempt
+		time.Sleep(1000 * time.Millisecond)
 	}
 }

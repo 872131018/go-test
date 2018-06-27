@@ -6,6 +6,3 @@ services:
             - ./go/bin:/go/bin/
         build:
             context: ./go
-        environment:
-            - AGENTS=1
-            - TARGET=
