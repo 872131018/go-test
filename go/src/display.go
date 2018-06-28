@@ -8,31 +8,37 @@ import (
 	"time"
 )
 
-func Display(output map[int]string) {
+func Handle(attempts chan attempt, o *map[int]string) {
+	for a := range attempts {
+		(*o)[a.a] = fmt.Sprintf("Agent %d - successes: %d - failures: %d - duration: %v", a.a, a.s, a.e, a.l)
+	}
+}
+
+func Display(o map[int]string) {
 	// create timer to refresh display
-	ticker := time.NewTicker(100 * time.Millisecond)
+	t := time.NewTicker(100 * time.Millisecond)
 
 	// listen to the timer
-	for _ = range ticker.C {
+	for _ = range t.C {
 
 		//clear the screen
-		cmd := exec.Command("clear")
-		cmd.Stdout = os.Stdout
-		cmd.Run()
+		c := exec.Command("clear")
+		c.Stdout = os.Stdout
+		c.Run()
 
 		//hack to fix output
 		fmt.Println("")
 
 		// get the ids of the agents that have responded for sorting
 		var keys []int
-		for k := range output {
+		for k := range o {
 			keys = append(keys, k)
 		}
 		sort.Ints(keys)
 
 		// print sorted list of agent responses
-		for key := range keys {
-			fmt.Println(output[key])
+		for k := range keys {
+			fmt.Println(o[k])
 		}
 	}
 }

@@ -1,48 +1,41 @@
 package main
 
 import (
-	"fmt"
 	"time"
 )
 
 type attempt struct {
-	agent  int
-	s      int
-	e      int
-	length time.Duration
-	code   int
-	err    error
+	a    int
+	s    int
+	e    int
+	l    time.Duration
+	code int
+	err  error
 }
 
 func main() {
-	// define possible targets
-	projects := []string{
+	// define possible ts
+	p := []string{
 		"martialarchery.com",
 		"romancingthebrush.com",
 	}
 
 	// get which project to test on
-	target, agents := Prompt(projects)
+	t, a := Prompt(p)
 
 	// create a channel to hold agent results
 	attempts := make(chan attempt)
 
-	// generate agents to make requests
-	for i := 0; i < agents; i++ {
-		go newAgent(i, projects[target], attempts)
+	// generate a to make requests
+	for i := 0; i < a; i++ {
+		go newAgent(i, p[t], attempts)
 	}
 
 	// hash to send to display
-	output := make(map[int]string)
+	o := make(map[int]string)
 
-	// listen to agents and aggregate results
-	go handleResponses(attempts, &output)
+	// listen to a and aggregate results
+	go Handle(attempts, &o)
 
-	Display(output)
-}
-
-func handleResponses(attempts chan attempt, output *map[int]string) {
-	for a := range attempts {
-		(*output)[a.agent] = fmt.Sprintf("Agent %d - successes: %d - failures: %d - duration: %v", a.agent, a.s, a.e, a.length)
-	}
+	Display(o)
 }
