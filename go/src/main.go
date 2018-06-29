@@ -27,26 +27,26 @@ func main() {
 	// create a channel to hold agent results
 	attempts := make(chan attempt)
 
+	// create output map to display results
+	o := make(map[int]string)
+
 	// generate a to make requests
 	for i := 0; i < a; i++ {
 		go newAgent(i, p[t], attempts)
 	}
 
-	// hash to send to display
-	o := make(map[int]string)
+	// write results to central place
+	go func(attempts chan attempt) {
+		for a := range attempts {
+			o[a.a] = fmt.Sprintf("Agent %d - successes: %d - failures: %d - duration: %v", a.a, a.s, a.e, a.l)
+		}
+	}(attempts)
 
-	// listen to agents and aggregate results
-	//go handleResponses(attempts, output)
+	// create timer to refresh display
+	tick := time.NewTicker(100 * time.Millisecond)
 
-	for a := range attempts {
-		o[a.a] = fmt.Sprintf("Agent %d - successes: %d - failures: %d - duration: %v", a.a, a.s, a.e, a.l)
+	// listen to the timer
+	for _ = range tick.C {
+		Display(o)
 	}
-
-	Display(o)
 }
-
-// func handleResponses(attempts chan attempt, output *map[int]string) {
-// 	for a := range attempts {
-// 		(*output)[a.agent] = fmt.Sprintf("Agent %d - successes: %d - failures: %d - duration: %v", a.agent, a.s, a.e, a.length)
-// 	}
-// }
