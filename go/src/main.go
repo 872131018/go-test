@@ -36,13 +36,17 @@ func main() {
 	output := make(map[int]string)
 
 	// listen to agents and aggregate results
-	go handleResponses(attempts, &output)
+	//go handleResponses(attempts, output)
+
+	for a := range attempts {
+		output[a.agent] = fmt.Sprintf("Agent %d - successes: %d - failures: %d - duration: %v", a.agent, a.s, a.e, a.length)
+	}
 
 	Display(output)
 }
 
-func handleResponses(attempts chan attempt, output *map[int]string) {
-	for a := range attempts {
-		(*output)[a.agent] = fmt.Sprintf("Agent %d - successes: %d - failures: %d - duration: %v", a.agent, a.s, a.e, a.length)
-	}
-}
+// func handleResponses(attempts chan attempt, output *map[int]string) {
+// 	for a := range attempts {
+// 		(*output)[a.agent] = fmt.Sprintf("Agent %d - successes: %d - failures: %d - duration: %v", a.agent, a.s, a.e, a.length)
+// 	}
+// }
