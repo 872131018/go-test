@@ -6,9 +6,9 @@ import (
 	"time"
 )
 
-func newAgent(id int, target string, attempts chan attempt) {
+func newAgent(id int, t string, attempts chan attempt) {
 	// generate url to target
-	target = fmt.Sprintf("http://%s/", target)
+	t = fmt.Sprintf("http://%s/", t)
 
 	// successes
 	s := 0
@@ -22,7 +22,7 @@ func newAgent(id int, target string, attempts chan attempt) {
 		now := time.Now()
 
 		// make request to the target and track result
-		res, err := http.Get(target)
+		res, err := http.Get(t)
 		if err != nil {
 			e++
 		} else {
@@ -31,27 +31,27 @@ func newAgent(id int, target string, attempts chan attempt) {
 		}
 
 		// data about the request and response
-		attempt := attempt{
-			agent:  id,
-			s:      s,
-			e:      e,
-			length: time.Since(now),
+		a := attempt{
+			a: id,
+			s: s,
+			e: e,
+			l: time.Since(now),
 		}
 
 		// response ok get status code
 		if res != nil {
-			attempt.code = res.StatusCode
-			attempt.err = nil
+			a.code = res.StatusCode
+			a.err = nil
 		}
 
 		// response err track err
 		if err != nil {
-			attempt.code = 500
-			attempt.err = err
+			a.code = 500
+			a.err = err
 		}
 
 		// push attempt into channel
-		attempts <- attempt
+		attempts <- a
 
 		// brief moment of silence
 		time.Sleep(1000 * time.Millisecond)

@@ -7,25 +7,25 @@ import (
 
 func Prompt(projects []string) (int, int) {
 	// give user options for testing
-	for i, project := range projects {
-		fmt.Printf("%d - %s\n", i, project)
+	for i, p := range projects {
+		fmt.Printf("%d - %s\n", i, p)
 	}
 
 	// declare the list of projects that are supported
 	fmt.Printf("Which project would you like to test?: ")
-	var target int
-	_, err := fmt.Scanf("%d", &target)
+	var t int
+	_, err := fmt.Scanf("%d", &t)
 	if err != nil {
 		log.Fatal("Must select a valid target to test")
 	}
 
 	// determine the number of agents to produce
 	fmt.Printf("How many agents would you like to create? ")
-	var agents int
-	_, err = fmt.Scanf("%d", &agents)
+	var a int
+	_, err = fmt.Scanf("%d", &a)
 	if err != nil {
 		log.Fatal("Must have a valid number of agents")
 	}
 
-	return target, agents
+	return t, a
 }
