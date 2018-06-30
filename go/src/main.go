@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -30,13 +31,20 @@ func main() {
 	// request counter
 	rps := 0
 
+	// create output map to display results
+	o := make(map[int]string)
+
 	// generate a to make requests
 	for i := 0; i < a; i++ {
 		go newAgent(i, p[t], attempts)
 	}
 
-	// hash to send to display
-	o := make(map[int]string)
+	// write results to central place
+	go func(attempts chan attempt) {
+		for a := range attempts {
+			o[a.a] = fmt.Sprintf("Agent %d - successes: %d - failures: %d - duration: %v", a.a, a.s, a.e, a.l)
+		}
+	}(attempts)
 
 	// listen to a and aggregate results
 	go Handle(attempts, &o, &rps)

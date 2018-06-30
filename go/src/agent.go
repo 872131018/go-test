@@ -2,19 +2,20 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
 	"time"
 )
 
 func newAgent(id int, t string, attempts chan attempt) {
-	// generate url to target
-	t = fmt.Sprintf("http://%s/", t)
-
 	// successes
 	s := 0
 
 	//errors
 	e := 0
+
+	// generate url to target
+	t = fmt.Sprintf("http://%s/", t)
 
 	// start testing on the target
 	for i := 0; ; i++ {
@@ -54,6 +55,6 @@ func newAgent(id int, t string, attempts chan attempt) {
 		attempts <- a
 
 		// brief moment of silence
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
 	}
 }
