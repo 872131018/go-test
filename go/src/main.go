@@ -16,6 +16,7 @@ type attempt struct {
 func main() {
 	// define possible ts
 	p := []string{
+		"localhost:8080",
 		"martialarchery.com",
 		"romancingthebrush.com",
 	}
@@ -26,6 +27,9 @@ func main() {
 	// create a channel to hold agent results
 	attempts := make(chan attempt)
 
+	// request counter
+	rps := 0
+
 	// generate a to make requests
 	for i := 0; i < a; i++ {
 		go newAgent(i, p[t], attempts)
@@ -35,7 +39,7 @@ func main() {
 	o := make(map[int]string)
 
 	// listen to a and aggregate results
-	go Handle(attempts, &o)
+	go Handle(attempts, &o, &rps)
 
-	Display(o)
+	Display(o, &rps)
 }
