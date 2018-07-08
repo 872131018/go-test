@@ -17,7 +17,7 @@ type attempt struct {
 func main() {
 	// define possible ts
 	p := []string{
-		"localhost:8080",
+		"localhost",
 		"martialarchery.com",
 		"romancingthebrush.com",
 	}
